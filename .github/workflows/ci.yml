@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "2.4.3"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Линтер и типы
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: poetry
+
+      - run: poetry install --with dev
+
+      - name: ruff check
+        run: poetry run ruff check --output-format=github .
+
+      - name: ruff format
+        run: poetry run ruff format --check .
+
+      - name: mypy
+        run: poetry run mypy
+
+  test:
+    name: Тесты (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: poetry
+
+      - run: poetry install --with dev
+
+      - name: pytest
+        env:
+          APP_ENV: ci
+        run: poetry run pytest --cov-report=xml
+
+      - name: Выгрузить покрытие
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+          retention-days: 7
+
+  migrations:
+    name: Миграции на Postgres
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fines
+          POSTGRES_PASSWORD: fines
+          POSTGRES_DB: fines
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fines"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: poetry
+
+      - run: poetry install --with dev
+
+      - name: alembic upgrade head
+        env:
+          DATABASE_URL: postgresql+asyncpg://fines:fines@localhost:5432/fines
+        run: poetry run alembic upgrade head
+
+      - name: Проверить, что модели совпадают с миграциями
+        env:
+          DATABASE_URL: postgresql+asyncpg://fines:fines@localhost:5432/fines
+        run: poetry run alembic check

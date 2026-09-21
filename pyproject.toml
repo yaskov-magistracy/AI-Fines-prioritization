@@ -1,0 +1,86 @@
+[project]
+name = "ai-fines-prioritization"
+version = "0.1.0"
+description = "Приоритизация должников по стоимости их автомобиля: парсинг PDF, оценка рынка, поиск с фильтрами"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "yaskov-magistracy" }]
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "greenlet>=3.1",
+    "alembic>=1.14",
+    "asyncpg>=0.30",
+    "python-multipart>=0.0.17",
+    "pdfplumber>=0.11",
+    "pypdf>=5.1",
+    "pillow>=11.0",
+    "httpx>=0.28",
+    "tenacity>=9.0",
+    "structlog>=24.4",
+    "rapidfuzz>=3.10",
+]
+
+[project.scripts]
+fines = "fines.cli:main"
+
+[project.urls]
+Repository = "https://github.com/yaskov-magistracy/AI-Fines-prioritization"
+
+[tool.poetry]
+packages = [{ include = "fines", from = "src" }]
+requires-poetry = ">=2.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.3"
+pytest-asyncio = ">=0.24"
+pytest-cov = ">=6.0"
+aiosqlite = ">=0.20"
+ruff = ">=0.8"
+mypy = ">=1.13"
+pre-commit = ">=4.0"
+reportlab = ">=4.2"
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF", "ASYNC"]
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B018"]
+"alembic/versions/*" = ["E501", "W291", "N999"]
+"alembic/*" = ["N999", "F401"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src", "tests"]
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["pdfplumber.*", "reportlab.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-q --strict-markers --cov=fines --cov-report=term-missing"
+markers = ["integration: требует внешних сервисов (Postgres, сеть)"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/fines"]
