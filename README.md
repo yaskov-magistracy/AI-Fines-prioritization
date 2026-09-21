@@ -111,7 +111,8 @@ make revision m="описание"   # новая миграция
 | `docker.yml` | push в main, теги, PR | сборка образа, дымовой тест на PR, публикация в GHCR |
 | `release.yml` | тег `v*.*.*` | GitHub Release с автогенерируемым changelog |
 
-Образ: `ghcr.io/yaskov-magistracy/ai-fines-prioritization`. Секреты не нужны —
+Образ: `ghcr.io/yaskov-magistracy/ai-fines-prioritization`, рассчитан на Postgres —
+передайте `DATABASE_URL` и примонтируйте том под `/data/storage`. Секреты не нужны —
 хватает встроенного `GITHUB_TOKEN`.
 
 Релиз:
