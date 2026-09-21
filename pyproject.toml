@@ -16,6 +16,7 @@ dependencies = [
     "greenlet>=3.1",
     "alembic>=1.14",
     "asyncpg>=0.30",
+    "aiosqlite>=0.20",
     "python-multipart>=0.0.17",
     "pdfplumber>=0.11",
     "pypdf>=5.1",
@@ -40,7 +41,6 @@ requires-poetry = ">=2.0"
 pytest = ">=8.3"
 pytest-asyncio = ">=0.24"
 pytest-cov = ">=6.0"
-aiosqlite = ">=0.20"
 ruff = ">=0.8"
 mypy = ">=1.13"
 pre-commit = ">=4.0"

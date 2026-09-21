@@ -54,6 +54,7 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -61,13 +62,26 @@ jobs:
 
       - name: Дымовой тест образа
         if: github.event_name == 'pull_request'
+        env:
+          IMAGE: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
         run: |
-          docker build -t fines:smoke .
-          docker run --rm -d --name fines-smoke -p 8000:8000 \
-            -e DATABASE_URL=sqlite+aiosqlite:///./fines.db fines:smoke
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:8000/health; then break; fi
+          docker network create smoke
+          docker run -d --name smoke-db --network smoke \
+            -e POSTGRES_USER=fines -e POSTGRES_PASSWORD=fines -e POSTGRES_DB=fines \
+            --health-cmd "pg_isready -U fines" --health-interval 3s \
+            postgres:16-alpine
+          docker run -d --name smoke-api --network smoke -p 8000:8000 \
+            -e DATABASE_URL=postgresql+asyncpg://fines:fines@smoke-db:5432/fines \
+            "$IMAGE"
+
+          ok=""
+          for _ in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health; then ok=1; break; fi
             sleep 2
           done
-          curl -fsS http://localhost:8000/health
-          docker stop fines-smoke
+
+          echo "--- логи контейнера ---"
+          docker logs smoke-api
+          docker rm -f smoke-api smoke-db > /dev/null
+          docker network rm smoke > /dev/null
+          test -n "$ok"

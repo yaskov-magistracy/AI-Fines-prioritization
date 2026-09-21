@@ -6,7 +6,7 @@ version = "0.22.1"
 description = "asyncio bridge to the standard sqlite3 module"
 optional = false
 python-versions = ">=3.9"
-groups = ["dev"]
+groups = ["main"]
 files = [
     {file = "aiosqlite-0.22.1-py3-none-any.whl", hash = "sha256:21c002eb13823fad740196c5a2e9d8e62f6243bd9e7e4a1f87fb5e44ecb4fceb"},
     {file = "aiosqlite-0.22.1.tar.gz", hash = "sha256:043e0bd78d32888c0a9ca90fc788b38796843360c855a7262a532813133a0650"},
@@ -2817,4 +2817,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.14"
-content-hash = "296a4ec454c875737e889d3aa1944f6e67961f40c7332a5d260a55758a50b891"
+content-hash = "3d87c105cc374056fbb3c99976203d82f8e917098feff89ad57be267426ad626"
